@@ -18,6 +18,7 @@ def prepare_challenge_workspace(
     artifact_paths: list[str],
     challenge_payload: dict[str, Any],
     source_root: Path | None = None,
+    artifact_cookie_header: str | None = None,
 ) -> tuple[Path, list[str]]:
     challenge_dir = _workspace_dir_for_challenge(workspace_root, challenge_name)
     artifacts_dir = challenge_dir / "artifacts"
@@ -29,7 +30,11 @@ def prepare_challenge_workspace(
         if _is_http_url(artifact_path):
             target_name = _dedupe_name(_name_for_remote_artifact(artifact_path), used_names)
             target_path = artifacts_dir / target_name
-            _download_artifact(artifact_path, target_path)
+            _download_artifact(
+                artifact_path,
+                target_path,
+                cookie_header=_artifact_cookie_header(artifact_path, challenge_payload, artifact_cookie_header),
+            )
         else:
             source_path = _resolve_artifact_path(artifact_path, source_root)
             target_name = _dedupe_name(source_path.name, used_names)
@@ -95,9 +100,13 @@ def _copy_path(source_path: Path, target_path: Path) -> None:
     shutil.copy2(source_path, target_path)
 
 
-def _download_artifact(url: str, target_path: Path) -> None:
+def _download_artifact(url: str, target_path: Path, cookie_header: str | None = None) -> None:
     target_path.parent.mkdir(parents=True, exist_ok=True)
-    with request.urlopen(url) as response:
+    headers = {"User-Agent": "ctf-destroyer-artifact/0.1"}
+    if cookie_header:
+        headers["Cookie"] = cookie_header
+    req = request.Request(url, headers=headers)
+    with request.urlopen(req) as response:
         with target_path.open("wb") as handle:
             shutil.copyfileobj(response, handle)
 
@@ -114,6 +123,43 @@ def _name_for_remote_artifact(url: str) -> str:
         return candidate
     digest = sha1(url.encode("utf-8")).hexdigest()[:12]
     return f"artifact-{digest}"
+
+
+def _artifact_cookie_header(
+    artifact_url: str,
+    challenge_payload: dict[str, Any],
+    artifact_cookie_header: str | None,
+) -> str | None:
+    if not artifact_cookie_header:
+        return None
+    source_host = _challenge_source_host(challenge_payload)
+    artifact_host = parse.urlparse(artifact_url).hostname
+    if not source_host or not artifact_host:
+        return None
+    if _host_scope(source_host) != _host_scope(artifact_host):
+        return None
+    return artifact_cookie_header
+
+
+def _challenge_source_host(challenge_payload: dict[str, Any]) -> str | None:
+    metadata = challenge_payload.get("challenge_metadata")
+    if isinstance(metadata, dict):
+        import_metadata = metadata.get("import_metadata")
+        if isinstance(import_metadata, dict):
+            source_url = import_metadata.get("source_url")
+            if isinstance(source_url, str):
+                return parse.urlparse(source_url).hostname
+    play_url = challenge_payload.get("play_url")
+    if isinstance(play_url, str):
+        return parse.urlparse(play_url).hostname
+    return None
+
+
+def _host_scope(hostname: str) -> str:
+    parts = hostname.lower().split(".")
+    if len(parts) >= 2:
+        return ".".join(parts[-2:])
+    return hostname.lower()
 
 
 def _dedupe_name(name: str, used_names: set[str]) -> str:

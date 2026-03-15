@@ -259,10 +259,10 @@ def _infer_instance_required(
         return True
     if imported.target_host:
         return False
+    if imported.files:
+        return False
     if candidate.challenge_id is None:
         return False
-    if _extract_csrf_nonce(document) and not imported.files:
-        return True
     return bool(INSTANCE_HINT_RE.search(imported.description))
 
 

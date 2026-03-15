@@ -4,8 +4,7 @@ import json
 from pathlib import Path
 import re
 import warnings
-from typing import Any, Callable
-from typing_extensions import TypedDict
+from typing import Any, Callable, TypedDict
 
 # Temporary local suppression until LangChain/LangGraph stop importing pydantic.v1 on Python 3.14+.
 warnings.filterwarnings(

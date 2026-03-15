@@ -28,6 +28,7 @@ from .import_service import (
     validate_instance_access,
 )
 from .importers import ImportRequest
+from .importers.sources import resolve_cookie_header
 from .orchestrator_service import ChallengeRunRequest, run_challenge
 
 
@@ -387,6 +388,7 @@ def _launch_available_challenges(
                 max_attempts=request.max_attempts,
                 skills_root=request.skills_root,
                 workspace_root=request.workspace_root,
+                artifact_cookie_header=resolve_cookie_header(context.import_request),
                 thread_id=record.challenge_key,
                 source_root=_resolve_source_root(context),
             ),

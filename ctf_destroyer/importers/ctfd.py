@@ -85,6 +85,10 @@ def import_ctfd_challenge(
         for item in list(data.get("files", []))
         if str(item).strip()
     ]
+    description_files, description_references = _extract_description_links(description_html, base_url)
+    for url in description_files:
+        if url not in files:
+            files.append(url)
     connection_info = str(data.get("connection_info", "") or "").strip()
     access_entries = _fetch_current_container_access(base_url, candidate.challenge_id, import_request)
     start_result = {
@@ -123,7 +127,7 @@ def import_ctfd_challenge(
         points=_maybe_int(data.get("value")),
         solves=_maybe_int(data.get("solves")),
         play_url=document.fetched_url or document.source_label,
-        references=[],
+        references=description_references,
         source_snippet=None,
         import_metadata={
             "source_type": document.source_type,
@@ -193,7 +197,7 @@ def _fetch_current_container(
             resolve_cookie_header(import_request),
         )
     except Exception:
-        return []
+        return None
 
     data = payload.get("data")
     if not isinstance(data, dict):
@@ -344,6 +348,20 @@ def _extract_csrf_nonce(document: SourceDocument) -> str | None:
     return None
 
 
+def _extract_description_links(description_html: str, base_url: str) -> tuple[list[str], list[str]]:
+    raw_links = re.findall(r'href=["\']([^"\']+)["\']', description_html, flags=re.IGNORECASE)
+    files: list[str] = []
+    references: list[str] = []
+    for raw_link in raw_links:
+        url = parse.urljoin(base_url, raw_link.strip())
+        if not url:
+            continue
+        target = files if _looks_like_file_url(url) else references
+        if url not in target:
+            target.append(url)
+    return files, references
+
+
 def _ctfd_base_url(document: SourceDocument) -> str | None:
     origin = document.fetched_url or document.source_label
     if not origin:
@@ -352,6 +370,36 @@ def _ctfd_base_url(document: SourceDocument) -> str | None:
     if parsed.scheme not in {"http", "https"} or not parsed.netloc:
         return None
     return f"{parsed.scheme}://{parsed.netloc}"
+
+
+def _looks_like_file_url(url: str) -> bool:
+    lowered = url.lower()
+    return lowered.endswith(
+        (
+            ".py",
+            ".zip",
+            ".tar",
+            ".tar.gz",
+            ".tgz",
+            ".gz",
+            ".bz2",
+            ".xz",
+            ".txt",
+            ".pcap",
+            ".png",
+            ".jpg",
+            ".jpeg",
+            ".pdf",
+            ".cpp",
+            ".c",
+            ".rs",
+            ".go",
+            ".js",
+            ".java",
+            ".sage",
+            ".bin",
+        )
+    )
 
 
 def _maybe_int(value: Any) -> int | None:

@@ -22,6 +22,7 @@ class ChallengeRunRequest:
     max_attempts: int
     skills_root: Path
     workspace_root: Path
+    artifact_cookie_header: str | None = None
     thread_id: str = "ctf-poc"
     source_root: Path | None = None
 
@@ -56,6 +57,7 @@ def run_challenge(
         artifact_paths=artifact_paths,
         challenge_payload=challenge,
         source_root=request.source_root or Path.cwd(),
+        artifact_cookie_header=request.artifact_cookie_header,
     )
     _emit(
         event_sink,
