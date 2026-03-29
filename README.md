@@ -1,4 +1,4 @@
-# CTF Destroyer
+# CTF Orchestrator
 
 Orchestrateur agentique pour challenges CTF.
 
