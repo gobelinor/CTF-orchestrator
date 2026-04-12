@@ -8,7 +8,6 @@ import os
 from pathlib import Path
 import re
 import signal
-import shlex
 import subprocess
 import sys
 import textwrap
@@ -507,11 +506,11 @@ class SubprocessWorker(WorkerBackend, ABC):
 
 class CodexWorker(SubprocessWorker):
     def __init__(self) -> None:
-        super().__init__(name="codex", timeout_seconds=_resolve_worker_timeout_seconds("CODEX_TIMEOUT_SECONDS"))
+        super().__init__(name="codex", timeout_seconds=_resolve_worker_timeout_seconds())
         self.model = os.getenv("CODEX_MODEL", "")
         self.sandbox, self.approval_policy = _resolve_codex_execution_policy()
-        self.extra_args = shlex.split(os.getenv("CODEX_EXTRA_ARGS", ""))
-        self.stream_events = _resolve_worker_stream_events("CODEX_STREAM_EVENTS", True)
+        self.extra_args: list[str] = []
+        self.stream_events = True
 
     def invoke(
         self,
@@ -725,11 +724,11 @@ class CodexWorker(SubprocessWorker):
 
 class ClaudeWorker(SubprocessWorker):
     def __init__(self) -> None:
-        super().__init__(name="claude", timeout_seconds=_resolve_worker_timeout_seconds("CLAUDE_TIMEOUT_SECONDS"))
+        super().__init__(name="claude", timeout_seconds=_resolve_worker_timeout_seconds())
         self.model = os.getenv("CLAUDE_MODEL", "")
         self.permission_mode = _resolve_claude_permission_mode()
-        self.extra_args = shlex.split(os.getenv("CLAUDE_EXTRA_ARGS", ""))
-        self.stream_events = _resolve_worker_stream_events("CLAUDE_STREAM_EVENTS", True)
+        self.extra_args: list[str] = []
+        self.stream_events = True
 
     def invoke(
         self,
@@ -1106,25 +1105,13 @@ def _to_text(value: str | bytes | None) -> str:
     return value
 
 
-def _env_flag(name: str, default: bool) -> bool:
-    value = os.getenv(name)
-    if value is None:
-        return default
-    return value.strip().lower() not in {"0", "false", "no", "off"}
-
-
-def _resolve_worker_timeout_seconds(provider_env: str, default: int = 1800) -> int:
-    value = _first_env_value("WORKER_TIMEOUT_SECONDS", provider_env)
-    if value is None:
-        return default
-    return int(value)
-
-
-def _resolve_worker_stream_events(provider_env: str, default: bool) -> bool:
-    if os.getenv("WORKER_STREAM_EVENTS") is not None:
-        return _env_flag("WORKER_STREAM_EVENTS", default)
-    if os.getenv(provider_env) is not None:
-        return _env_flag(provider_env, default)
+def _resolve_worker_timeout_seconds(default: int = 1800) -> int:
+    raw = os.getenv("WORKER_TIMEOUT_SECONDS", "").strip()
+    if raw:
+        try:
+            return int(raw)
+        except ValueError:
+            pass
     return default
 
 
@@ -1159,27 +1146,16 @@ def _join_stream_threads(*threads: threading.Thread, timeout_seconds: float = 5.
 
 
 def _resolve_codex_execution_policy() -> tuple[str, str]:
-    common_mode = _first_env_value("WORKER_PERMISSION_MODE")
-    if common_mode is not None:
+    common_mode = os.getenv("WORKER_PERMISSION_MODE", "").strip().lower()
+    if common_mode:
         return _map_common_permission_mode_to_codex(common_mode)
-
-    sandbox = os.getenv("CODEX_SANDBOX")
-    approval_policy = os.getenv("CODEX_APPROVAL_POLICY")
-    if sandbox is not None or approval_policy is not None:
-        return _normalize_codex_sandbox(sandbox or "workspace-write"), (approval_policy or "never").strip() or "never"
-
     return "workspace-write", "never"
 
 
 def _resolve_claude_permission_mode() -> str:
-    common_mode = _first_env_value("WORKER_PERMISSION_MODE")
-    if common_mode is not None:
+    common_mode = os.getenv("WORKER_PERMISSION_MODE", "").strip().lower()
+    if common_mode:
         return _map_common_permission_mode_to_claude(common_mode)
-
-    permission_mode = os.getenv("CLAUDE_PERMISSION_MODE")
-    if permission_mode is not None:
-        return permission_mode.strip() or "dontAsk"
-
     return "dontAsk"
 
 
@@ -1251,14 +1227,6 @@ def _map_common_permission_mode_to_claude(value: str) -> str:
             f"Valid aliases: {valid}"
         )
     return _PERMISSION_MODE_CLAUDE[normalized]
-
-
-def _first_env_value(*names: str) -> str | None:
-    for name in names:
-        value = os.getenv(name)
-        if value is not None:
-            return value
-    return None
 
 
 def _read_stream_lines(

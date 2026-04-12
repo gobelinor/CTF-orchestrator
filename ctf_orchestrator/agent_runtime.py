@@ -33,22 +33,6 @@ DEFAULT_AGENT_TIMEOUT_SECONDS = 300
 
 
 def resolve_agent_timeout(role: str, default: int | None = None) -> int:
-    """Resolve the timeout for a given agent role.
-
-    Hierarchy: AGENT_TIMEOUT_<ROLE> → AGENT_TIMEOUT_DEFAULT → explicit default
-    → DEFAULT_AGENT_TIMEOUT_SECONDS.
-    """
-    role_key = role.upper().replace("-", "_").replace(".", "_")
-    for name in (f"AGENT_TIMEOUT_{role_key}", "AGENT_TIMEOUT_DEFAULT"):
-        raw = os.getenv(name, "").strip()
-        if not raw:
-            continue
-        try:
-            value = int(raw)
-        except ValueError:
-            continue
-        if value > 0:
-            return value
     if default is not None and default > 0:
         return default
     return DEFAULT_AGENT_TIMEOUT_SECONDS
@@ -101,16 +85,7 @@ def _resolve_budget_limit() -> int | None:
 BUDGET = _BudgetTracker()
 
 
-def _resolve_concurrency() -> int:
-    raw = os.getenv("CTF_LLM_MAX_CONCURRENCY", "3").strip()
-    try:
-        value = int(raw)
-    except ValueError:
-        value = 3
-    return max(1, value)
-
-
-_AGENT_SEMAPHORE = threading.BoundedSemaphore(_resolve_concurrency())
+_AGENT_SEMAPHORE = threading.BoundedSemaphore(3)
 
 
 # ---------------------------------------------------------------------------
@@ -343,17 +318,9 @@ def is_mock_enabled() -> bool:
 
 
 def resolve_model(role: str, backend_name: str, default: str) -> str:
-    role_key = role.upper().replace("-", "_").replace(".", "_")
-    candidates: list[str] = []
-    if backend_name == "claude":
-        candidates += [f"CLAUDE_MODEL_{role_key}", "CLAUDE_MODEL"]
-    elif backend_name == "codex":
-        candidates += [f"CODEX_MODEL_{role_key}", "CODEX_MODEL"]
-    for name in candidates:
-        value = os.getenv(name, "").strip()
-        if value:
-            return value
-    return default
+    env_name = "CLAUDE_MODEL" if backend_name == "claude" else "CODEX_MODEL"
+    value = os.getenv(env_name, "").strip()
+    return value or default
 
 
 # ---------------------------------------------------------------------------

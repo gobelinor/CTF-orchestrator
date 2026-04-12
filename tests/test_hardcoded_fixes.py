@@ -80,28 +80,6 @@ class StrictPermissionModeTests(unittest.TestCase):
             _map_common_permission_mode_to_claude("rainbow")
 
 
-class ConfigurableMemoryBoundsTests(unittest.TestCase):
-    def setUp(self):
-        os.environ["MEMORY_TESTED_HYPOTHESES_LIMIT"] = "5"
-        import importlib
-
-        from ctf_orchestrator import graph as graph_module
-
-        importlib.reload(graph_module)
-        self.graph_module = graph_module
-
-    def tearDown(self):
-        os.environ.pop("MEMORY_TESTED_HYPOTHESES_LIMIT", None)
-        import importlib
-
-        from ctf_orchestrator import graph as graph_module
-
-        importlib.reload(graph_module)
-
-    def test_env_override_applied(self):
-        self.assertEqual(self.graph_module.MEMORY_TESTED_HYPOTHESES_LIMIT, 5)
-
-
 class BackendRegistryTests(unittest.TestCase):
     def tearDown(self):
         workers._EXTRA_BACKEND_FACTORIES.clear()
@@ -175,29 +153,12 @@ class HTMLExtractorTests(unittest.TestCase):
         self.assertIn("d", text)
 
 
-class PerRoleTimeoutTests(unittest.TestCase):
-    def setUp(self):
-        for key in ("AGENT_TIMEOUT_DEFAULT", "AGENT_TIMEOUT_SUMMARIZER", "AGENT_TIMEOUT_WRITEUP"):
-            os.environ.pop(key, None)
-
-    def tearDown(self):
-        self.setUp()
-
+class TimeoutTests(unittest.TestCase):
     def test_default_fallback(self):
         self.assertEqual(resolve_agent_timeout("summarizer", default=200), 200)
 
-    def test_role_env_wins(self):
-        os.environ["AGENT_TIMEOUT_SUMMARIZER"] = "77"
-        self.assertEqual(resolve_agent_timeout("summarizer"), 77)
-
-    def test_default_env_fallback(self):
-        os.environ["AGENT_TIMEOUT_DEFAULT"] = "42"
-        self.assertEqual(resolve_agent_timeout("writeup"), 42)
-
-    def test_role_env_beats_default_env(self):
-        os.environ["AGENT_TIMEOUT_DEFAULT"] = "42"
-        os.environ["AGENT_TIMEOUT_WRITEUP"] = "99"
-        self.assertEqual(resolve_agent_timeout("writeup"), 99)
+    def test_global_default(self):
+        self.assertEqual(resolve_agent_timeout("summarizer"), 300)
 
 
 class ExtensibleEnumValidationTests(unittest.TestCase):
@@ -227,24 +188,6 @@ class ExtensibleEnumValidationTests(unittest.TestCase):
             validate_against_schema({"decision": "c"}, schema, lenient_enums=False)
 
 
-class RunsPathConfigTests(unittest.TestCase):
-    def test_runs_dir_override(self):
-        os.environ["CTF_RUNS_DIR"] = "custom-runs"
-        try:
-            import importlib
-
-            from ctf_orchestrator import graph as graph_module
-
-            importlib.reload(graph_module)
-            self.assertEqual(graph_module.RUNS_DIR, "custom-runs")
-            self.assertEqual(graph_module.ATTEMPT_HISTORY_PATH, "custom-runs/attempt-history.json")
-        finally:
-            os.environ.pop("CTF_RUNS_DIR", None)
-            import importlib
-
-            from ctf_orchestrator import graph as graph_module
-
-            importlib.reload(graph_module)
 
 
 if __name__ == "__main__":

@@ -5,12 +5,12 @@ import unittest
 from unittest.mock import patch
 
 from ctf_orchestrator.challenges import normalize_challenge_payload
-from ctf_orchestrator.cli import _load_env_file, parse_args
 from ctf_orchestrator.orchestrator_service import (
     maybe_write_writeup,
     render_writeup_markdown,
     validate_challenge_actionability,
 )
+from ctf_orchestrator.utils import load_env_file
 
 
 class CliNormalizationTest(unittest.TestCase):
@@ -52,7 +52,7 @@ class CliNormalizationTest(unittest.TestCase):
                 os.environ["DISCORD_BOT_TOKEN"] = "already-set"
                 os.environ.pop("DISCORD_PARENT_CHANNEL_ID", None)
 
-                _load_env_file(env_path)
+                load_env_file(env_path)
 
                 self.assertEqual(os.environ["DISCORD_BOT_TOKEN"], "already-set")
                 self.assertEqual(os.environ["DISCORD_PARENT_CHANNEL_ID"], "1480705892918755544")
@@ -62,26 +62,6 @@ class CliNormalizationTest(unittest.TestCase):
                 else:
                     os.environ["DISCORD_BOT_TOKEN"] = original_token
                 os.environ.pop("DISCORD_PARENT_CHANNEL_ID", None)
-
-    def test_parse_args_uses_default_dotenv_when_present(self) -> None:
-        with TemporaryDirectory() as tmp_dir:
-            root = Path(tmp_dir)
-            env_path = root / ".env"
-            env_path.write_text("DISCORD_PARENT_CHANNEL_ID=1480705892918755544\n", encoding="utf-8")
-            previous_cwd = Path.cwd()
-            original_channel = os.environ.get("DISCORD_PARENT_CHANNEL_ID")
-            try:
-                os.chdir(root)
-                os.environ.pop("DISCORD_PARENT_CHANNEL_ID", None)
-                args = parse_args(["--challenge-name", "X", "--challenge-text", "Y"])
-                self.assertEqual(args.discord_parent_channel_id, "1480705892918755544")
-                self.assertEqual(args.env_file.resolve(), env_path.resolve())
-            finally:
-                os.chdir(previous_cwd)
-                if original_channel is None:
-                    os.environ.pop("DISCORD_PARENT_CHANNEL_ID", None)
-                else:
-                    os.environ["DISCORD_PARENT_CHANNEL_ID"] = original_channel
 
     def test_render_writeup_includes_resolution_and_commands(self) -> None:
         markdown = render_writeup_markdown(
@@ -120,7 +100,6 @@ class CliNormalizationTest(unittest.TestCase):
     def test_maybe_write_writeup_only_when_solved(self) -> None:
         with TemporaryDirectory() as tmp_dir:
             workspace = Path(tmp_dir)
-
             maybe_write_writeup(
                 workspace=workspace,
                 challenge_name="Solved Challenge",
@@ -229,7 +208,6 @@ class CliNormalizationTest(unittest.TestCase):
                     }
                 },
             )
-
         self.assertIn("not actionable", str(context.exception))
         self.assertIn("start_instance_result=failed", str(context.exception))
 

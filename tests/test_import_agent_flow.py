@@ -1,10 +1,9 @@
 import unittest
-from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from ctf_orchestrator import import_cli, import_service
+from ctf_orchestrator import import_service
 from ctf_orchestrator.importers import ImportRequest, ImportedChallenge
 
 
@@ -98,39 +97,6 @@ class ImportAgentFlowTests(unittest.TestCase):
         self.assertEqual(imported.title, "Alpha")
         self.assertTrue(imported.import_metadata["imported_via_agent"])
         self.assertIn("board_source_key", imported.import_metadata)
-
-    def test_import_cli_list_mode_prints_candidates(self):
-        def fake_agent(*, document, skills_root, selected_challenge, list_mode, start_instance=False, session_cookie=None):
-            return [_fake_imported("Alpha"), _fake_imported("Beta")]
-
-        with TemporaryDirectory() as tmp:
-            board_path = Path(tmp) / "board.txt"
-            board_path.write_text("x", encoding="utf-8")
-            buf = StringIO()
-            with patch.object(import_service, "normalize_via_agent", side_effect=fake_agent), \
-                 patch("sys.stdout", new=buf):
-                code = import_cli.main([str(board_path), "--list"])
-        self.assertEqual(code, 0)
-        output = buf.getvalue()
-        self.assertIn("Alpha", output)
-        self.assertIn("Beta", output)
-
-    def test_import_cli_writes_stdout_json_for_single_challenge(self):
-        def fake_agent(*, document, skills_root, selected_challenge, list_mode, start_instance=False, session_cookie=None):
-            return [_fake_imported("Alpha", category="crypto", target="example.com:1337")]
-
-        with TemporaryDirectory() as tmp:
-            board_path = Path(tmp) / "board.txt"
-            board_path.write_text("x", encoding="utf-8")
-            buf = StringIO()
-            with patch.object(import_service, "normalize_via_agent", side_effect=fake_agent), \
-                 patch("sys.stdout", new=buf):
-                code = import_cli.main([str(board_path), "--stdout"])
-        self.assertEqual(code, 0)
-        output = buf.getvalue()
-        self.assertIn("Alpha", output)
-        self.assertIn("crypto", output)
-        self.assertIn("example.com:1337", output)
 
 
 if __name__ == "__main__":

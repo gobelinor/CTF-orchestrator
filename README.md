@@ -6,11 +6,10 @@ Multi-agent CTF solver. Prompt-driven. LangGraph + claude/codex subprocesses.
 
 ## What it does
 
-- Import challenges from URL/file/stdin via prompt-driven agent.
-- Route to specialist skill. Spawn `claude`/`codex`/`mock` worker.
+- Import challenges from URL/file via prompt-driven agent.
+- Route to specialist skill. Spawn `claude`/`codex` worker.
 - Working memory tracks hypotheses, branches, stagnation.
 - Decision engine: retry, reframe, switch backend, stop, writeup, persist memory.
-- Parallel trajectories best-of-N (first-flag-wins).
 - Campaign mode: queue + bounded concurrency + supervisor agent between challenges.
 - Post-solve: writeup agent + memory agent (Graphiti MCP).
 
@@ -47,16 +46,9 @@ Multi-agent CTF solver. Prompt-driven. LangGraph + claude/codex subprocesses.
                        └───────────────────────────────────────┘
 ```
 
-Python minimal. Prompts do heavy lifting. Skills loaded from `skills/*/SKILL.md` at runtime.
-
 ## Challenge loop
 
 ```
-┌──────────────────────┐
-│ normalize + workspace │
-│ load resume context   │
-└──────────┬───────────┘
-           ▼
    START ─► route ─► run_specialist ─► analyze_attempt
                           ▲                    │
                           │                    ▼
@@ -67,80 +59,72 @@ Python minimal. Prompts do heavy lifting. Skills loaded from `skills/*/SKILL.md`
                           END (stop / writeup / memory)
 ```
 
-`decide_next` picks one of 8 decisions based on flag presence, worker signals, stagnation detection, budget. Never retries same approach without positive signal.
-
 ## Install
 
 ```bash
 python3 -m venv .venv && . .venv/bin/activate && pip install -e .
 ```
 
-Needs `claude` or `codex` installed and authed. Mock backend for offline dev.
+Needs `claude` or `codex` installed and authed.
+
+## Flags
+
+```
+ctf SOURCE [options]
+
+SOURCE                   URL, local file path, or '-' for stdin
+--input-file PATH        Read board text from a local file
+--session-cookie VALUE   Session cookie or full Cookie header
+--cookie-file PATH       File containing the raw Cookie header
+--category CAT           Allowed category (repeatable)
+--challenge NAME         Challenge title filter (repeatable)
+--max-difficulty LEVEL   easy | medium | hard
+--max-challenges N       Limit to top N eligible challenges
+--max-parallel N         Max parallel runs (default 2)
+--backend-sequence LIST  Comma-separated workers, e.g. 'claude,codex' (default mock)
+--max-attempts N         Max specialist attempts per challenge (default 4)
+--skills-root PATH       Skills directory (default skills/)
+--workspace PATH         Workspace root (default cwd)
+--env-file PATH          .env file (default .env if present)
+```
 
 ## Usage
 
-Unified CLI: `ctf {run|import|campaign}`. Old commands (`ctf-orchestrator`, `ctf-import`, `ctf-supervisor`) still work.
+```bash
+ctf "https://ctf.example.com/challenges" \
+  --session-cookie "abc123" \
+  --backend-sequence claude,codex \
+  --max-attempts 6
+```
 
-### Campaign (board of challenges)
+Filter by category or challenge name:
 
 ```bash
-ctf campaign \
-  "https://ctf.example.com/challenges" \
+ctf "https://ctf.example.com/challenges" \
   --session-cookie "abc123" \
   --category web --category crypto \
-  --max-parallel-challenges 3 \
-  --max-attempts 6 \
-  --backend-sequence claude,codex \
-  --start-instance-when-needed
+  --challenge "Noise Cheap" \
+  --backend-sequence claude
 ```
 
-Import agent reads page. Queue filters + prioritizes. Challenges solved in parallel. Supervisor agent picks next action between challenges. Solved → writeup + memory persist.
-
-### Single challenge
+Offline dev (no LLM):
 
 ```bash
-ctf run --challenge-file challenge.json --backend-sequence claude,codex
+CTF_AGENTS_MOCK=1 ctf --input-file board.txt --backend-sequence mock
 ```
 
-### Import
+## Env vars
 
-```bash
-ctf import "https://ctf.example.com/challenges/target" \
-  --session-cookie "abc123" --start-instance --output challenge.json
-```
-
-### Offline dev
-
-```bash
-CTF_AGENTS_MOCK=1 ctf run --challenge-file challenge.json --backend-sequence mock
-```
-
-## Workspace
-
-```
-.challenges/<slug>-<hash>/
-├── challenge.json
-├── writeup.md
-├── artifacts/
-└── .runs/
-    ├── attempt-history.json
-    ├── working-memory.json
-    ├── llm-calls.jsonl
-    └── cache/<role>/<sha>.json
-```
-
-Auto-resume: rereads history + working memory on next run.
-
-## Key env vars
-
-| Var | What |
-|---|---|
-| `CLAUDE_MODEL` / `CODEX_MODEL` | Default model. Per-role: `CLAUDE_MODEL_SOLVER`, `_WRITEUP`, etc. |
-| `CTF_LLM_BUDGET_MAX_CALLS` | Hard stop on total LLM calls |
-| `CTF_LLM_MAX_CONCURRENCY` | Semaphore (default 3) |
-| `CTF_AGENTS_MOCK=1` | Offline dev, no LLM calls |
-| `WORKER_PERMISSION_MODE` | `default`, `on-request`, `plan`, `danger-full-access` |
-| `WORKER_TIMEOUT_SECONDS` | Default 1800 |
+| Var | What | Default |
+|---|---|---|
+| `CLAUDE_MODEL` | Claude model | (worker default) |
+| `CODEX_MODEL` | Codex model | (worker default) |
+| `CTF_LLM_BUDGET_MAX_CALLS` | Hard stop on LLM calls | unlimited |
+| `CTF_AGENTS_MOCK` | Offline dev, no LLM | off |
+| `WORKER_PERMISSION_MODE` | `default`, `on-request`, `plan` | `default` |
+| `WORKER_TIMEOUT_SECONDS` | Worker timeout | 1800 |
+| `DISCORD_BOT_TOKEN` | Discord integration | (optional) |
+| `DISCORD_PARENT_CHANNEL_ID` | Discord channel | (optional) |
 
 ## Tests
 
@@ -150,5 +134,5 @@ Auto-resume: rereads history + working memory on next run.
 
 ## Limits
 
-- No UI. No auto-submit flags. No remote persistence beyond Graphiti.
-- Without `claude`/`codex`, import and campaign agents need `CTF_AGENTS_MOCK=1`.
+- No UI. No auto-submit flags.
+- Without `claude`/`codex`: use `CTF_AGENTS_MOCK=1`.

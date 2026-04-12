@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from pathlib import Path
 import textwrap
 from typing import Any
@@ -110,11 +109,7 @@ def normalize_via_agent(
 
 
 def _resolve_import_workspace() -> Path:
-    raw = os.getenv("CTF_IMPORT_WORKSPACE", "").strip()
-    if raw:
-        path = Path(raw).expanduser().resolve()
-    else:
-        path = Path.cwd() / ".runs" / "import"
+    path = Path.cwd() / ".runs" / "import"
     path.mkdir(parents=True, exist_ok=True)
     return path
 
@@ -122,9 +117,6 @@ def _resolve_import_workspace() -> Path:
 def _resolve_backends(preferred: str | None) -> list[str]:
     if preferred:
         return [preferred]
-    env_value = os.getenv("CTF_IMPORT_AGENT_BACKENDS", "").strip()
-    if env_value:
-        return [b.strip() for b in env_value.split(",") if b.strip()]
     return ["claude", "codex"]
 
 

@@ -105,13 +105,7 @@ class ModelRoutingTests(unittest.TestCase):
     def setUp(self):
         self._backup = {
             key: os.environ.pop(key, None)
-            for key in (
-                "CLAUDE_MODEL",
-                "CLAUDE_MODEL_SUPERVISOR",
-                "CLAUDE_MODEL_SOLVER",
-                "CODEX_MODEL",
-                "CODEX_MODEL_IMPORT",
-            )
+            for key in ("CLAUDE_MODEL", "CODEX_MODEL")
         }
 
     def tearDown(self):
@@ -121,21 +115,19 @@ class ModelRoutingTests(unittest.TestCase):
             else:
                 os.environ[key] = value
 
-    def test_specific_wins(self):
-        os.environ["CLAUDE_MODEL"] = "default"
-        os.environ["CLAUDE_MODEL_SUPERVISOR"] = "haiku"
-        self.assertEqual(resolve_model("supervisor", "claude", "fallback"), "haiku")
-
-    def test_fallback_to_claude_model(self):
+    def test_claude_model_env(self):
         os.environ["CLAUDE_MODEL"] = "sonnet"
-        self.assertEqual(resolve_model("solver", "claude", "fallback"), "sonnet")
+        self.assertEqual(resolve_model("supervisor", "claude", "fallback"), "sonnet")
 
     def test_default_when_no_env(self):
         self.assertEqual(resolve_model("memory", "claude", "fallback"), "fallback")
 
-    def test_codex_role(self):
-        os.environ["CODEX_MODEL_IMPORT"] = "gpt-mini"
+    def test_codex_model_env(self):
+        os.environ["CODEX_MODEL"] = "gpt-mini"
         self.assertEqual(resolve_model("import", "codex", "fallback"), "gpt-mini")
+
+    def test_codex_default_when_no_env(self):
+        self.assertEqual(resolve_model("import", "codex", "fallback"), "fallback")
 
 
 class MockAgentTests(unittest.TestCase):

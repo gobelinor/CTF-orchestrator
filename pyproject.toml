@@ -15,9 +15,6 @@ dependencies = [
 
 [project.scripts]
 ctf = "ctf_orchestrator.main_cli:main"
-ctf-orchestrator = "ctf_orchestrator.cli:main"
-ctf-import = "ctf_orchestrator.import_cli:main"
-ctf-supervisor = "ctf_orchestrator.supervisor_cli:main"
 
 [tool.setuptools.packages.find]
 include = ["ctf_orchestrator*"]
