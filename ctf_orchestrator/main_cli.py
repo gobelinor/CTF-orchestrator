@@ -24,9 +24,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     env_file = extract_env_file_arg(argv)
     load_env_file(env_file)
 
+    banner = r"""
+   ___  ____  ____     __  ____   ___  _  _  ____  ____  ____  ____   __  ____  __  ____
+  / __)(_  _)(  __)   /  \(  _ \ / __)/ )( \(  __)/ ___)(_  _)(  _ \ / _\(_  _)/  \(  _ \
+ ( (__   )(   ) _)   (  O ))   /( (__ ) __ ( ) _) \___ \  )(   )   //    \ )( (  O ))   /
+  \___) (__) (__)     \__/(__\_) \___)\_)(_/(____)(____/ (__) (__\_)\_/\_/(__) \__/(__\_)
+"""
     parser = argparse.ArgumentParser(
         prog="ctf",
-        description="CTF orchestrator — run a campaign against a board of challenges.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=banner + "\nRun a campaign against a board of challenges.",
     )
     parser.add_argument("source", nargs="?", help="URL, local file path, or '-' for stdin.")
     parser.add_argument("--input-file", type=Path, help="Read board text from a local file.")
