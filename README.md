@@ -88,6 +88,7 @@ SOURCE                   URL, local file path, or '-' for stdin
 --max-parallel N         Max parallel runs (default 2)
 --backend-sequence LIST  Comma-separated workers, e.g. 'claude,codex' (default mock)
 --max-attempts N         Max specialist attempts per challenge (default 4)
+--parallel-trajectories N  N isolated agents per challenge, first-flag-wins (default 1)
 --skills-root PATH       Skills directory (default skills/)
 --workspace PATH         Workspace root (default cwd)
 --env-file PATH          .env file (default .env if present)
@@ -110,6 +111,15 @@ ctf "https://ctf.example.com/challenges" \
   --category web --category crypto \
   --challenge "Noise Cheap" \
   --backend-sequence claude
+```
+
+3 agents race on each challenge (first flag wins):
+
+```bash
+ctf "https://ctf.example.com/challenges" \
+  --session-cookie "abc123" \
+  --backend-sequence claude \
+  --parallel-trajectories 3
 ```
 
 Offline dev (no LLM):

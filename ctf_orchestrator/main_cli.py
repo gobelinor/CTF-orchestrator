@@ -50,6 +50,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Comma-separated worker order, e.g. 'claude,codex'.",
     )
     parser.add_argument("--max-attempts", type=int, default=4, help="Max specialist attempts per challenge.")
+    parser.add_argument(
+        "--parallel-trajectories",
+        type=int,
+        default=1,
+        help="N isolated agents per challenge, first-flag-wins (default 1).",
+    )
     parser.add_argument("--skills-root", type=Path, default=Path("skills"), help="Skills directory.")
     parser.add_argument("--workspace", type=Path, default=Path.cwd(), help="Workspace root.")
     parser.add_argument(
@@ -101,6 +107,7 @@ def main(argv: list[str] | None = None) -> int:
                 max_challenges=args.max_challenges,
                 max_parallel_challenges=args.max_parallel,
                 max_instance_challenges=1,
+                parallel_trajectories=args.parallel_trajectories,
                 retry_needs_human=False,
                 start_instance_when_needed=True,
             ),

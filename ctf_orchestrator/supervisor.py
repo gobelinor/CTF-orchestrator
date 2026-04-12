@@ -30,7 +30,7 @@ from .import_service import (
 )
 from .importers import ImportRequest
 from .importers.sources import resolve_cookie_header
-from .orchestrator_service import ChallengeRunRequest, run_challenge
+from .orchestrator_service import ChallengeRunRequest, run_challenge, run_challenge_parallel
 from .supervisor_agent import decide_post_challenge
 
 
@@ -50,6 +50,7 @@ class SupervisorRunRequest:
     max_challenges: int | None
     max_parallel_challenges: int
     max_instance_challenges: int
+    parallel_trajectories: int = 1
     retry_needs_human: bool = False
     start_instance_when_needed: bool = False
 
@@ -398,20 +399,26 @@ def _launch_available_challenges(
                 "instance_required": record.instance_required,
             },
         )
-        future = executor.submit(
-            run_challenge,
-            ChallengeRunRequest(
-                challenge_payload=dict(record.challenge_payload),
-                backend_sequence=request.backend_sequence,
-                max_attempts=request.max_attempts,
-                skills_root=request.skills_root,
-                workspace_root=request.workspace_root,
-                artifact_cookie_header=resolve_cookie_header(context.import_request),
-                thread_id=record.challenge_key,
-                source_root=_resolve_source_root(context),
-            ),
-            _build_challenge_event_sink(emit, record.challenge_key),
+        challenge_request = ChallengeRunRequest(
+            challenge_payload=dict(record.challenge_payload),
+            backend_sequence=request.backend_sequence,
+            max_attempts=request.max_attempts,
+            skills_root=request.skills_root,
+            workspace_root=request.workspace_root,
+            artifact_cookie_header=resolve_cookie_header(context.import_request),
+            thread_id=record.challenge_key,
+            source_root=_resolve_source_root(context),
         )
+        challenge_sink = _build_challenge_event_sink(emit, record.challenge_key)
+        if request.parallel_trajectories > 1:
+            future = executor.submit(
+                run_challenge_parallel,
+                challenge_request,
+                n=request.parallel_trajectories,
+                event_sink=challenge_sink,
+            )
+        else:
+            future = executor.submit(run_challenge, challenge_request, challenge_sink)
         active[future] = record.challenge_key
 
 
