@@ -1,42 +1,23 @@
 ---
 name: ctf-pwn-solver
-description: Résolution agressive de challenges CTF Pwn: triage des protections, identification de primitive mémoire, leak, contrôle de flux, exploit pwntools stable et garde-fous contre les approches bruyantes ou aléatoires.
+description: Solveur CTF Pwn. Charge la methodology core et applique les quick wins, pivots et outils spécifiques binary exploitation. Couvre stack/heap overflow, format string, UAF, ROP, shellcode, primitives read/write.
 ---
 
 # CTF Pwn Solver
 
-## Workflow
-1. Triage immédiat: arch, libc, NX, PIE, RELRO, canary, binaire dynamique ou statique.
-2. Comprendre le protocole I/O avant de chercher des gadgets.
-3. Identifier la primitive réelle: read/write, overflow, format string, UAF, double free, race locale, OOB.
-4. Obtenir un leak fiable ou une primitive de réécriture simple avant de complexifier.
-5. Stabiliser localement avec `pwntools`, puis reproduire sur la cible distante.
-6. Garder l'exploit court, paramétrable et orienté flag.
+Applique la Resolution Loop définie dans `ctf-core-methodology`. Ce skill ajoute uniquement les signaux et outils spécifiques pwn.
 
 ## Quick Wins
 - ret2win, shellcode obvious, format string triviale, GOT overwrite sous protections faibles
-- index signé/non signé, taille contrôlée, lecture arbitraire, off-by-one, menu mal borné
-- mauvaises hypothèses sur `scanf`, `printf`, `gets`, `read`, `strcpy`, chunks heap simples
+- index signé/non signé, taille contrôlée, off-by-one, menu mal borné
+- `scanf`/`printf`/`gets`/`read`/`strcpy` mal utilisés, chunks heap simples
 
 ## High-Value Pivots
-- `file`, `checksec`, `ldd`, `strings`, `objdump` avant GDB profond
-- un harness local qui reproduit exactement les échanges
-- fuites de stack, libc, heap ou bss avant la chaîne finale
-- si la corruption heap est complexe, revenir au modèle des chunks et aux invariants allocator
+- Triage d'abord: `file`, `checksec`, `ldd`, `strings`, `objdump` — GDB seulement une fois la primitive identifiée.
+- Harness local qui reproduit exactement les échanges.
+- Fuites (stack/libc/heap/bss) avant la chaîne finale.
+- Heap complexe → revenir aux invariants allocator, pas au spray.
+- Au step Research: Graphiti → `ctf_writeups` + web pour la version libc exacte, les how2heap correspondants, les one-gadgets publiés.
 
-## Resource Traps
-- pas de bruteforce d'adresses si l'entropie n'est pas faible et bornée
-- pas de spray de gadgets ou de chaînes ROP énormes sans primitive stable
-- pas de boucles distantes agressives qui peuvent dégrader l'instance du CTF
-- si l'exploit est flaky, réduire: leak, synchronisation, tailles, state machine
-
-## Tool Bias
-- `checksec`, `objdump`, `readelf`, `strings`
-- `pwntools`, `gdb`, `pwndbg`, `ROPgadget`
-- `one_gadget` ou `libc-database` seulement si la chaîne le justifie
-
-## Minimum Output
-- primitive retenue
-- leak ou invariant critique
-- exploit final
-- flag
+## Tools spécifiques
+`checksec`, `objdump`, `readelf`, `pwntools`, `gdb` / `pwndbg`, `ROPgadget`, `one_gadget`, `libc-database`.

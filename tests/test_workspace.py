@@ -4,7 +4,7 @@ import io
 import unittest
 from unittest.mock import patch
 
-from ctf_destroyer.workspace import prepare_challenge_workspace
+from ctf_orchestrator.workspace import prepare_challenge_workspace
 
 
 class WorkspaceTest(unittest.TestCase):
@@ -32,7 +32,7 @@ class WorkspaceTest(unittest.TestCase):
         with TemporaryDirectory() as tmp_dir:
             root = Path(tmp_dir)
 
-            with patch("ctf_destroyer.workspace.request.urlopen", return_value=io.BytesIO(b"print('hi')\n")):
+            with patch("ctf_orchestrator.workspace.request.urlopen", return_value=io.BytesIO(b"print('hi')\n")):
                 workspace, staged = prepare_challenge_workspace(
                     workspace_root=root,
                     challenge_name="Hash Stuffing",

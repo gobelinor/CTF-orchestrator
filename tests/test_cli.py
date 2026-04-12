@@ -4,19 +4,18 @@ from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
 
-from ctf_destroyer.cli import (
-    _load_env_file,
-    _maybe_write_writeup,
-    _normalize_challenge_payload,
-    _render_writeup_markdown,
-    _validate_challenge_actionability,
-    parse_args,
+from ctf_orchestrator.challenges import normalize_challenge_payload
+from ctf_orchestrator.cli import _load_env_file, parse_args
+from ctf_orchestrator.orchestrator_service import (
+    maybe_write_writeup,
+    render_writeup_markdown,
+    validate_challenge_actionability,
 )
 
 
 class CliNormalizationTest(unittest.TestCase):
     def test_normalizes_target_and_files(self) -> None:
-        payload = _normalize_challenge_payload(
+        payload = normalize_challenge_payload(
             {
                 "title": "Evaluative",
                 "description": "Decode the rogue bot.",
@@ -85,7 +84,7 @@ class CliNormalizationTest(unittest.TestCase):
                     os.environ["DISCORD_PARENT_CHANNEL_ID"] = original_channel
 
     def test_render_writeup_includes_resolution_and_commands(self) -> None:
-        markdown = _render_writeup_markdown(
+        markdown = render_writeup_markdown(
             challenge_name="Bruce Test",
             challenge_text="Recover the password from a structured search problem.",
             category_hint="crypto",
@@ -122,7 +121,7 @@ class CliNormalizationTest(unittest.TestCase):
         with TemporaryDirectory() as tmp_dir:
             workspace = Path(tmp_dir)
 
-            _maybe_write_writeup(
+            maybe_write_writeup(
                 workspace=workspace,
                 challenge_name="Solved Challenge",
                 challenge_text="Inline flag challenge.",
@@ -140,7 +139,7 @@ class CliNormalizationTest(unittest.TestCase):
 
         with TemporaryDirectory() as tmp_dir:
             workspace = Path(tmp_dir)
-            _maybe_write_writeup(
+            result = maybe_write_writeup(
                 workspace=workspace,
                 challenge_name="Unsolved Challenge",
                 challenge_text="No flag.",
@@ -154,16 +153,17 @@ class CliNormalizationTest(unittest.TestCase):
                     "history": [],
                 },
             )
+            self.assertIsNone(result)
             self.assertFalse((workspace / "writeup.md").exists())
 
     def test_maybe_write_writeup_prefers_worker_generated_markdown(self) -> None:
         with TemporaryDirectory() as tmp_dir:
             workspace = Path(tmp_dir)
             with patch(
-                "ctf_destroyer.cli.generate_writeup_markdown",
+                "ctf_orchestrator.orchestrator_service.generate_writeup_markdown",
                 return_value="# Writeup\n\nSharper than the fallback.\n",
             ) as mocked:
-                _maybe_write_writeup(
+                maybe_write_writeup(
                     workspace=workspace,
                     challenge_name="Solved Challenge",
                     challenge_text="Inline flag challenge.",
@@ -190,8 +190,8 @@ class CliNormalizationTest(unittest.TestCase):
     def test_maybe_write_writeup_falls_back_when_worker_returns_none(self) -> None:
         with TemporaryDirectory() as tmp_dir:
             workspace = Path(tmp_dir)
-            with patch("ctf_destroyer.cli.generate_writeup_markdown", return_value=None):
-                _maybe_write_writeup(
+            with patch("ctf_orchestrator.orchestrator_service.generate_writeup_markdown", return_value=None):
+                maybe_write_writeup(
                     workspace=workspace,
                     challenge_name="Solved Challenge",
                     challenge_text="Inline flag challenge.",
@@ -215,7 +215,7 @@ class CliNormalizationTest(unittest.TestCase):
 
     def test_validate_challenge_actionability_rejects_missing_instance_access(self) -> None:
         with self.assertRaises(SystemExit) as context:
-            _validate_challenge_actionability(
+            validate_challenge_actionability(
                 "Operating Room",
                 None,
                 {
@@ -234,7 +234,7 @@ class CliNormalizationTest(unittest.TestCase):
         self.assertIn("start_instance_result=failed", str(context.exception))
 
     def test_validate_challenge_actionability_allows_target_host_when_present(self) -> None:
-        _validate_challenge_actionability(
+        validate_challenge_actionability(
             "Operating Room",
             "espilon.net:35691",
             {

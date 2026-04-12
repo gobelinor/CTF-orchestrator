@@ -25,3 +25,6 @@ description: Routage initial de tout challenge CTF vers le couple `ctf-core-meth
 - Hardware: firmware, bus, UART/JTAG, RF, SDR, embedded
 - Jail: pyjail, shell jail, seccomp, sandbox escape
 - Misc: tout le reste ou vrai hybride non dominant
+
+## Graphiti (MCP)
+Graphiti est dispo via MCP dans l'environnement (group_id `ctf_writeups`). En cas de doute sur la catégorie, tu peux interroger Graphiti pour voir si un challenge avec ce titre a déjà été résolu et dans quelle catégorie il a été classé. Tu ne persistes rien.

@@ -4,7 +4,7 @@ from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
 
-from ctf_destroyer.orchestrator_service import maybe_write_writeup
+from ctf_orchestrator.orchestrator_service import maybe_write_writeup
 
 
 class OrchestratorServiceWriteupTest(unittest.TestCase):
@@ -12,7 +12,7 @@ class OrchestratorServiceWriteupTest(unittest.TestCase):
         with TemporaryDirectory() as tmp_dir:
             workspace = Path(tmp_dir)
             with patch(
-                "ctf_destroyer.orchestrator_service.generate_writeup_markdown",
+                "ctf_orchestrator.orchestrator_service.generate_writeup_markdown",
                 side_effect=subprocess.TimeoutExpired(cmd="codex", timeout=300),
             ):
                 maybe_write_writeup(

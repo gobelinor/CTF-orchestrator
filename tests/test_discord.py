@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import patch
 from urllib.error import HTTPError
 
-from ctf_destroyer.discord_sync import (
+from ctf_orchestrator.discord_sync import (
     CampaignDiscordObserver,
     ChallengeDiscordObserver,
     DiscordClient,
@@ -424,7 +424,7 @@ class DiscordSyncTest(unittest.TestCase):
             return current
 
         transport = DiscordHttpTransport("token", max_retries=1, sleep_fn=sleeps.append)
-        with patch("ctf_destroyer.discord_sync.request.urlopen", side_effect=fake_urlopen):
+        with patch("ctf_orchestrator.discord_sync.request.urlopen", side_effect=fake_urlopen):
             payload = transport.request("POST", "/channels/123/messages", payload={"content": "hello"})
 
         self.assertEqual(payload["id"], "message-1")

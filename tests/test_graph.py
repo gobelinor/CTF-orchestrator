@@ -3,8 +3,8 @@ from tempfile import TemporaryDirectory
 import unittest
 import json
 
-from ctf_destroyer.graph import build_initial_state, build_orchestrator, load_resume_context
-from ctf_destroyer.workers import build_worker_pool
+from ctf_orchestrator.graph import build_initial_state, build_orchestrator, load_resume_context
+from ctf_orchestrator.workers import build_worker_pool
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -32,7 +32,19 @@ class GraphTest(unittest.TestCase):
         )
 
         self.assertEqual(final_state["attempts"], 2)
-        self.assertEqual([event_type for event_type, _ in events], ["route_resolved", "attempt_completed", "attempt_completed"])
+        event_types = [event_type for event_type, _ in events]
+        self.assertEqual(
+            event_types,
+            [
+                "route_resolved",
+                "attempt_completed",
+                "attempt_analyzed",
+                "decision_made",
+                "attempt_completed",
+                "attempt_analyzed",
+                "decision_made",
+            ],
+        )
         self.assertEqual(events[0][1]["category"], "web")
         self.assertEqual(events[1][1]["attempt"], 1)
 

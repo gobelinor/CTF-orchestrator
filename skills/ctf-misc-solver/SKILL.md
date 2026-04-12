@@ -1,41 +1,24 @@
 ---
 name: ctf-misc-solver
-description: Résolution agressive de challenges CTF Misc: triage de formats hybrides, protocoles custom, automatisation minimale, réduction du problème à un pipeline scriptable et pivot rapide vers le flag.
+description: Solveur CTF Misc. Charge la methodology core et applique les quick wins et pivots pour challenges hybrides, protocoles custom, puzzles, automates, pipelines d'encodage.
 ---
 
 # CTF Misc Solver
 
-## Workflow
-1. Décrire le contrat entrée/sortie exact du challenge.
-2. Réduire le problème à un parser, un automate, une transformation ou un protocole minimal.
-3. Tester les quick wins évidents sur l'encodage, le transport, les bornes et l'état.
-4. Écrire un script court qui journalise les étapes utiles et stabilise les essais.
-5. Si une sous-discipline devient dominante, pivoter explicitement vers cette lecture sans perdre le solve script.
+Applique la Resolution Loop définie dans `ctf-core-methodology`. Ce skill couvre tout ce qui ne rentre pas dans une catégorie canonique.
 
 ## Quick Wins
-- encodages empilés, compression, sérialisation, JSON/binary framing
-- protocoles texte ou menu interactif avec états simples
-- erreurs d'index, limites, timestamps, checksums, seeds, génération déterministe
-- puzzles qui se réduisent à une recherche bornée ou à un automate fini
+- Encodages empilés, compression, sérialisation, framing JSON/binary
+- Protocoles texte / menu interactif / états simples
+- Erreurs d'index, limites, timestamps, checksums, seeds, génération déterministe
+- Puzzles qui se réduisent à une recherche bornée ou un automate fini
 
 ## High-Value Pivots
-- parser d'abord, optimiser ensuite
-- normaliser les entrées et sorties avant d'inférer une logique cachée
-- utiliser des transcripts courts pour comprendre le protocole au lieu de tester à l'aveugle
-- conserver un mode local ou mock pour itérer rapidement
+- **Parser d'abord, optimiser ensuite.** Comprendre le contrat I/O exact.
+- Transcripts courts pour comprendre un protocole inconnu.
+- Conserver un mode local / mock pour itérer.
+- Si une sous-discipline devient dominante (crypto, web, pwn), pivoter explicitement vers le solveur correspondant en signalant `recommended_action=reassess_category`.
+- Au step Research: Graphiti + web ciblé sur le nom exact du challenge.
 
-## Resource Traps
-- pas de fuzzing massif sans comprendre le format
-- pas de brute force de paramètres multiples sans réduction
-- pas d'automate géant ou de simulation lourde si un invariant plus simple existe
-- si le problème reste flou après 3 approches, re-spécifier l'I/O et repartir du plus petit cas
-
-## Tool Bias
-- Python standard library, `pwntools`, `requests`
-- `jq`, `awk`, `sed`, `xxd`, `nc`
-
-## Minimum Output
-- structure du problème
-- pipeline ou script final
-- hypothèse gagnante
-- flag
+## Tools spécifiques
+Python stdlib, `pwntools`, `requests`, `jq`, `awk`, `sed`, `xxd`, `nc`.

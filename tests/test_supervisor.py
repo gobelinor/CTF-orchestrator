@@ -8,13 +8,13 @@ import time
 import unittest
 from unittest.mock import patch
 
-from ctf_destroyer.campaign.logic import apply_filters_and_priorities
-from ctf_destroyer.campaign.models import CampaignCapacities, CampaignFilters, CampaignState
-from ctf_destroyer.campaign import campaign_dir_for_source, load_campaign_state
-from ctf_destroyer.import_service import BoardImportContext, ImportedChallengeRecord
-from ctf_destroyer.importers.models import DiscoveredChallenge, ImportedChallenge, ImportRequest, SourceDocument
-from ctf_destroyer.orchestrator_service import ChallengeRunResult
-from ctf_destroyer.supervisor import SupervisorRunRequest, run_supervisor
+from ctf_orchestrator.campaign.logic import apply_filters_and_priorities
+from ctf_orchestrator.campaign.models import CampaignCapacities, CampaignFilters, CampaignState
+from ctf_orchestrator.campaign import campaign_dir_for_source, load_campaign_state
+from ctf_orchestrator.import_service import BoardImportContext, ImportedChallengeRecord
+from ctf_orchestrator.importers.models import DiscoveredChallenge, ImportedChallenge, ImportRequest, SourceDocument
+from ctf_orchestrator.orchestrator_service import ChallengeRunResult
+from ctf_orchestrator.supervisor import SupervisorRunRequest, run_supervisor
 
 
 def _board_context() -> BoardImportContext:
@@ -216,11 +216,11 @@ class SupervisorRunTest(unittest.TestCase):
             )
 
         with TemporaryDirectory() as tmp_dir, patch(
-            "ctf_destroyer.supervisor.load_board_context", return_value=context
+            "ctf_orchestrator.supervisor.load_board_context", return_value=context
         ), patch(
-            "ctf_destroyer.supervisor.import_selected_candidates", return_value=records
+            "ctf_orchestrator.supervisor.import_selected_candidates", return_value=records
         ), patch(
-            "ctf_destroyer.supervisor.run_challenge", side_effect=fake_run_challenge
+            "ctf_orchestrator.supervisor.run_challenge", side_effect=fake_run_challenge
         ):
             result = run_supervisor(
                 SupervisorRunRequest(
@@ -265,11 +265,11 @@ class SupervisorRunTest(unittest.TestCase):
             )
 
         with TemporaryDirectory() as tmp_dir, patch(
-            "ctf_destroyer.supervisor.load_board_context", return_value=context
+            "ctf_orchestrator.supervisor.load_board_context", return_value=context
         ), patch(
-            "ctf_destroyer.supervisor.import_selected_candidates", return_value=[record]
+            "ctf_orchestrator.supervisor.import_selected_candidates", return_value=[record]
         ), patch(
-            "ctf_destroyer.supervisor.run_challenge", side_effect=unsolved_run
+            "ctf_orchestrator.supervisor.run_challenge", side_effect=unsolved_run
         ):
             workspace_root = Path(tmp_dir)
             first = run_supervisor(
@@ -334,11 +334,11 @@ class SupervisorRunTest(unittest.TestCase):
             )
 
         with TemporaryDirectory() as tmp_dir, patch(
-            "ctf_destroyer.supervisor.load_board_context", return_value=context
+            "ctf_orchestrator.supervisor.load_board_context", return_value=context
         ), patch(
-            "ctf_destroyer.supervisor.import_selected_candidates", return_value=[record]
+            "ctf_orchestrator.supervisor.import_selected_candidates", return_value=[record]
         ), patch(
-            "ctf_destroyer.supervisor.run_challenge", side_effect=varying_run
+            "ctf_orchestrator.supervisor.run_challenge", side_effect=varying_run
         ):
             workspace_root = Path(tmp_dir)
             run_supervisor(
@@ -395,9 +395,9 @@ class SupervisorRunTest(unittest.TestCase):
                 raise RuntimeError("sink exploded")
 
         with TemporaryDirectory() as tmp_dir, patch(
-            "ctf_destroyer.supervisor.load_board_context", return_value=context
+            "ctf_orchestrator.supervisor.load_board_context", return_value=context
         ), patch(
-            "ctf_destroyer.supervisor.import_selected_candidates", return_value=[record]
+            "ctf_orchestrator.supervisor.import_selected_candidates", return_value=[record]
         ):
             with self.assertRaises(RuntimeError):
                 run_supervisor(
@@ -434,7 +434,7 @@ class SupervisorRunTest(unittest.TestCase):
 def _record_from_import(record: ImportedChallengeRecord, challenge_key: str):
     payload = record.payload or {}
     metadata = payload.get("import_metadata", {})
-    from ctf_destroyer.campaign.models import CampaignChallengeRecord
+    from ctf_orchestrator.campaign.models import CampaignChallengeRecord
 
     return CampaignChallengeRecord(
         challenge_key=challenge_key,

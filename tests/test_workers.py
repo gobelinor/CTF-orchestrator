@@ -5,8 +5,8 @@ from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
 
-from ctf_destroyer.skills import Skill
-from ctf_destroyer.workers import (
+from ctf_orchestrator.skills import Skill
+from ctf_orchestrator.workers import (
     ClaudeWorker,
     CodexWorker,
     WorkerRequest,
@@ -58,7 +58,7 @@ class WorkerTraceTest(unittest.TestCase):
         self.assertEqual(commands, ["/bin/zsh -lc pwd", "/bin/zsh -lc ls"])
 
     def test_format_codex_event_line_for_console(self) -> None:
-        with patch("ctf_destroyer.workers._current_worker_timestamp", return_value="14:23:01"):
+        with patch("ctf_orchestrator.workers._current_worker_timestamp", return_value="14:23:01"):
             started = _format_codex_event_line(
                 '{"type":"item.started","item":{"id":"item_0","type":"command_execution","command":"/bin/zsh -lc pwd","status":"in_progress"}}'
             )
@@ -162,7 +162,7 @@ class WorkerTraceTest(unittest.TestCase):
         self.assertEqual(commands, ["pwd"])
 
     def test_format_claude_event_line_for_console(self) -> None:
-        with patch("ctf_destroyer.workers._current_worker_timestamp", return_value="14:23:01"):
+        with patch("ctf_orchestrator.workers._current_worker_timestamp", return_value="14:23:01"):
             started = _format_claude_event_line(
                 '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"toolu_1","name":"Bash","input":{"command":"pwd"}}]}}'
             )
@@ -221,8 +221,8 @@ class WorkerTraceTest(unittest.TestCase):
             worker.timeout_seconds = 1
             with (
                 patch.object(CodexWorker, "_build_command", return_value=["codex"]),
-                patch("ctf_destroyer.workers.subprocess.Popen", return_value=FakeTimedOutProcess()),
-                patch("ctf_destroyer.workers._terminate_process_tree") as terminate_process_tree,
+                patch("ctf_orchestrator.workers.subprocess.Popen", return_value=FakeTimedOutProcess()),
+                patch("ctf_orchestrator.workers._terminate_process_tree") as terminate_process_tree,
             ):
                 result = worker.invoke(request)
 

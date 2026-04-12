@@ -1,7 +1,7 @@
 from pathlib import Path
 import unittest
 
-from ctf_destroyer.skills import load_skills, resolve_specialist_skill, route_category
+from ctf_orchestrator.skills import load_skills, resolve_specialist_skill, route_category
 
 
 ROOT = Path(__file__).resolve().parents[1]

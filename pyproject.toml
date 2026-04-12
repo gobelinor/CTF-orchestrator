@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ctf-destroyer-poc"
+name = "ctf-orchestrator-poc"
 version = "0.1.0"
 description = "LangGraph PoC orchestrating Codex and Claude subprocess workers for CTF challenges."
 readme = "README.md"
@@ -14,9 +14,10 @@ dependencies = [
 ]
 
 [project.scripts]
-ctf-orchestrator = "ctf_destroyer.cli:main"
-ctf-import = "ctf_destroyer.import_cli:main"
-ctf-supervisor = "ctf_destroyer.supervisor_cli:main"
+ctf = "ctf_orchestrator.main_cli:main"
+ctf-orchestrator = "ctf_orchestrator.cli:main"
+ctf-import = "ctf_orchestrator.import_cli:main"
+ctf-supervisor = "ctf_orchestrator.supervisor_cli:main"
 
 [tool.setuptools.packages.find]
-include = ["ctf_destroyer*"]
+include = ["ctf_orchestrator*"]
