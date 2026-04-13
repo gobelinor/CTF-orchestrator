@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 import re
-from typing import Any, Iterable
+from typing import Any
 
 import yaml
 from yaml import YAMLError
@@ -290,10 +290,6 @@ def resolve_specialist_skill(category: str, skills: dict[str, Skill]) -> Skill:
 
 def resolve_core_skill(skills: dict[str, Skill]) -> Skill | None:
     return skills.get(CORE_SKILL_SLUG)
-
-
-def summarize_skill_inventory(skills: Iterable[Skill]) -> str:
-    return ", ".join(sorted(skill.slug for skill in skills))
 
 
 def _normalize_category_hint(category_hint: str) -> str:

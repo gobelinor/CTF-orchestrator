@@ -1049,11 +1049,6 @@ def register_worker_backend(name: str, factory: BackendFactory) -> None:
     _EXTRA_BACKEND_FACTORIES[name] = factory
 
 
-def registered_worker_backends() -> list[str]:
-    names = set(_BUILTIN_BACKEND_FACTORIES.keys()) | set(_EXTRA_BACKEND_FACTORIES.keys())
-    return sorted(names)
-
-
 def build_worker_pool(backends: list[str]) -> dict[str, WorkerBackend]:
     available: dict[str, WorkerBackend] = {}
     for name, factory in _BUILTIN_BACKEND_FACTORIES.items():
@@ -1075,15 +1070,6 @@ def build_worker_pool(backends: list[str]) -> dict[str, WorkerBackend]:
             f"Register custom backends with register_worker_backend(name, factory)."
         )
     return {backend: available[backend] for backend in backends}
-
-
-def _normalize_codex_sandbox(value: str) -> str:
-    normalized = value.strip().lower()
-    if normalized in {"read-only", "workspace-write", "danger-full-access"}:
-        return normalized
-    if normalized in {"seatbelt", "sandbox", "workspace"}:
-        return "workspace-write"
-    return "workspace-write"
 
 
 def _dedupe_strings(values: list[str]) -> list[str]:
